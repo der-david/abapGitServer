@@ -36,6 +36,14 @@ CLASS zcl_ags_db_merge_requests DEFINITION
         VALUE(rs_request) TYPE zags_merge_req_s
       RAISING
         zcx_ags_error .
+    CLASS-METHODS find
+      IMPORTING
+        !iv_repo_name     TYPE zags_repo_name
+        !iv_source_branch TYPE zags_branch_name
+      RETURNING
+        VALUE(rt_requests) TYPE zags_merge_req_tt
+      RAISING
+        zcx_ags_error .
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -94,6 +102,17 @@ CLASS ZCL_AGS_DB_MERGE_REQUESTS IMPLEMENTATION.
           repo_name = iv_repo_name
           id        = iv_id.
     ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD find.
+
+    DATA(ls_repo) = zcl_ags_db=>get_repos( )->single( iv_repo_name ).
+    SELECT * FROM zags_merge_req AS r INNER JOIN zags_branches AS b
+      ON b~repo = r~repo AND b~branch = r~source_branch
+      WHERE r~repo = @ls_repo-repo AND b~name = @iv_source_branch
+      INTO CORRESPONDING FIELDS OF TABLE @rt_requests.
 
   ENDMETHOD.
 

@@ -182,6 +182,13 @@ CLASS zcl_ags_service_rest DEFINITION
       RETURNING VALUE(rt_requests) TYPE zags_merge_req_tt
       RAISING
                 zcx_ags_error.
+    METHODS find_merge_requests
+      IMPORTING
+        iv_repo TYPE zags_repo_name
+        VALUE(iv_source_branch) TYPE zags_branch_name
+      RETURNING VALUE(rt_requests) TYPE zags_merge_req_tt
+      RAISING
+        zcx_ags_error.
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -253,6 +260,18 @@ CLASS ZCL_AGS_SERVICE_REST IMPLEMENTATION.
   METHOD edit_repo.
 
     zcl_ags_repo=>get_instance( is_data-name )->set_description( is_data-description ).
+
+  ENDMETHOD.
+
+
+  METHOD find_merge_requests.
+
+    FIND 'refs/heads/' IN iv_source_branch.
+    IF sy-subrc <> 0.
+      iv_source_branch = 'refs/heads/' && iv_source_branch.
+    ENDIF.
+    rt_requests = zcl_ags_db_merge_requests=>find( iv_repo_name = iv_repo
+      iv_source_branch = iv_source_branch ).
 
   ENDMETHOD.
 
@@ -752,6 +771,14 @@ CLASS ZCL_AGS_SERVICE_REST IMPLEMENTATION.
     APPEND 'IV_REPO' TO <ls_meta>-url-group_names.
     <ls_meta>-method    = zcl_swag=>c_method-get.
     <ls_meta>-handler   = 'LIST_OPEN_MERGE_REQUESTS'.
+
+    APPEND INITIAL LINE TO rt_meta ASSIGNING <ls_meta>.
+    <ls_meta>-summary   = 'Find merge request for branch'.
+    <ls_meta>-url-regex = '/find_merge_requests/([\w-]+)/([\w-]+)'.
+    APPEND 'IV_REPO' TO <ls_meta>-url-group_names.
+    APPEND 'IV_SOURCE_BRANCH' TO <ls_meta>-url-group_names.
+    <ls_meta>-method    = zcl_swag=>c_method-get.
+    <ls_meta>-handler   = 'FIND_MERGE_REQUESTS'.
 
   ENDMETHOD.
 ENDCLASS.
